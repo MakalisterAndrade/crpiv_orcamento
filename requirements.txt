@@ -6,3 +6,5 @@ reportlab==4.0.4
 pandas
 Flask-Migrate
 python-dotenv
+Flask
+gunicorn
