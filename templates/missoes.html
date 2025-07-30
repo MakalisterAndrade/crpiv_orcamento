@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>Gestão de Missões</h2>
+        
+        <!-- Filtros e Ações -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Filtrar por OPM Destino</label>
+                        <select name="opm_filtro" class="form-select">
+                            <option value="">Todas as OPMs</option>
+                            {% for unidade in unidades %}
+                            <option value="{{ unidade }}" {{ 'selected' if opm_filtro == unidade }}>{{ unidade }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Filtrar por Fonte</label>
+                        <select name="fonte_filtro" class="form-select">
+                            <option value="">Todas as Fontes</option>
+                            {% for unidade in unidades %}
+                            <option value="{{ unidade }}" {{ 'selected' if fonte_filtro == unidade }}>{{ unidade }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-filter"></i> Filtrar
+                            </button>
+                            <a href="{{ url_for('missoes') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Limpar
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Ações</label>
+                        <div class="btn-group w-100">
+                            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#novaMissaoModal">
+                                <i class="fas fa-plus"></i> Nova
+                            </button>
+                            <a href="{{ url_for('importar_missoes') }}" class="btn btn-info">
+                                <i class="fas fa-file-import"></i> CSV
+                            </a>
+                            <a href="{{ url_for('exportar_pdf') }}?tipo=missoes&opm_filtro={{ omp_filtro }}&fonte_filtro={{ fonte_filtro }}" 
+                               class="btn btn-outline-danger">
+                                <i class="fas fa-file-pdf"></i> PDF
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estatísticas Rápidas -->
+{% if missoes %}
+<div class="row mb-3">
+    <div class="col-md-3">
+        <div class="card border-primary">
+            <div class="card-body text-center">
+                <h5 class="text-primary">Total de Missões</h5>
+                <h3>{{ missoes|length }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-warning">
+            <div class="card-body text-center">
+                <h5 class="text-warning">Em Previsão</h5>
+                <h3>{{ missoes|selectattr('status', 'equalto', 'previsao')|list|length }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-success">
+            <div class="card-body text-center">
+                <h5 class="text-success">Autorizadas</h5>
+                <h3>{{ missoes|selectattr('status', 'equalto', 'autorizada')|list|length }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-info">
+            <div class="card-body text-center">
+                <h5 class="text-info">Valor Total</h5>
+                <h3>R$ {{ (missoes|sum(attribute='valor'))|currency }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Fonte</th>
+                        <th>OPM Destino</th>
+                        <th>Processo SEI</th>
+                        <th>Descrição</th>
+                        <th>Tipo</th>
+                        <th>Valor</th>
+                        <th>Mês</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for missao in missoes %}
+                    <tr>
+                        <td>{{ missao.fonte_dinheiro }}</td>
+                        <td>{{ missao.opm_destino }}</td>
+                        <td>{{ missao.processo_sei }}</td>
+                        <td>{{ missao.descricao[:50] }}{% if missao.descricao|length > 50 %}...{% endif %}</td>
+                        <td>{{ missao.tipo }}</td>
+                        <td class="fw-bold text-success">R$ {{ missao.valor|currency }}</td>
+                        <td>{{ missao.mes }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if missao.status == 'autorizada' else 'warning' }}">
+                                {{ missao.status.title() }}
+                            </span>
+                        </td>
+                        <td>
+                            <form action="{{ url_for('remover_missao', missao_id=missao.id) }}" method="post" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja apagar esta missão?');">
+                                <button type="submit" class="btn btn-danger btn-sm" title="Apagar missão">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </form>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('editar_missao', missao_id=missao.id) }}" 
+                                   class="btn btn-outline-primary" title="Editar">
+                                   <i class="fas fa-edit"></i>
+                                </a>
+                                {% if missao.status == 'previsao' %}
+                                <a href="{{ url_for('autorizar_missao', missao_id=missao.id) }}" 
+                                   class="btn btn-success" title="Autorizar">
+                                   <i class="fas fa-check"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" class="text-center text-muted py-4">
+                            <i class="fas fa-search fa-2x mb-2"></i>
+                            <br>Nenhuma missão encontrada com os filtros aplicados
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nova Missão -->
+<div class="modal fade" id="novaMissaoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nova Missão</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Fonte do Dinheiro</label>
+                                <select name="fonte_dinheiro" class="form-select" required>
+                                    {% for unidade in unidades %}
+                                    <option value="{{ unidade }}">{{ unidade }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">OPM Destino</label>
+                                <select name="opm_destino" class="form-select" required>
+                                    {% for unidade in unidades %}
+                                    <option value="{{ unidade }}">{{ unidade }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Processo SEI</label>
+                                <input type="text" name="processo_sei" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Tipo</label>
+                                <select name="tipo" class="form-select" required>
+                                    {% for tipo in tipos %}
+                                    <option value="{{ tipo }}">{{ tipo }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descrição</label>
+                        <textarea name="descricao" class="form-control" rows="3" required></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Período</label>
+                                <input type="text" name="periodo" class="form-control" placeholder="Ex: 15/01 a 20/01" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Mês</label>
+                                <select name="mes" class="form-select" required>
+                                    {% for mes in meses %}
+                                    <option value="{{ mes }}">{{ mes }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Valor (R$)</label>
+                                <input type="number" step="0.01" name="valor" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Nº Autorização</label>
+                                <input type="text" name="numero_autorizacao" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Status</label>
+                                <select name="status" class="form-select" required>
+                                    <option value="previsao">Previsão</option>
+                                    <option value="autorizada">Autorizada</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Missão</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

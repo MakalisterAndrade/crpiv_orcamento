@@ -1,0 +1,497 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1>Dashboard - Controle Orçamentário CRPIV</h1>
+        <p class="text-muted">Orçamento Acumulado de Todos os Bimestres</p>
+    </div>
+</div>
+
+{% if dashboard_data %}
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h5>Total Disponibilizado</h5>
+                <h3>R$ {{ dashboard_data.total_disponibilizado|currency }}</h3>
+                <small>Soma de todos os bimestres</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <h5>Previsões</h5>
+                <h3>R$ {{ dashboard_data.total_previsoes|currency }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <h5>Autorizadas</h5>
+                <h3>R$ {{ dashboard_data.total_autorizadas|currency }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h5>Saldo Disponível</h5>
+                <h3>R$ {{ dashboard_data.disponivel|currency }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Saldos Disponíveis para Distribuir -->
+
+{% if total_para_distribuir > 0 %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-share-alt"></i> 
+                    Saldos Disponíveis para Distribuição - CRPIV
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <strong>Total para Distribuir: R$ {{ total_para_distribuir|currency }}</strong>
+                    <p class="mb-0">Valores que ainda não foram distribuídos para as subunidades</p>
+                </div>
+                
+                <div class="row">
+                    {% if saldos_para_distribuir.diarias > 0 %}
+                    <div class="col-md-3">
+                        <div class="card border-primary">
+                            <div class="card-body text-center">
+                                <h6 class="text-primary">Diárias</h6>
+                                <h4 class="text-primary">R$ {{ saldos_para_distribuir.diarias|currency }}</h4>
+                                <small class="text-muted">Disponível para distribuir</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if saldos_para_distribuir.derso > 0 %}
+                    <div class="col-md-3">
+                        <div class="card border-success">
+                            <div class="card-body text-center">
+                                <h6 class="text-success">DERSO</h6>
+                                <h4 class="text-success">R$ {{ saldos_para_distribuir.derso|currency }}</h4>
+                                <small class="text-muted">Disponível para distribuir</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if saldos_para_distribuir.diarias_pav > 0 %}
+                    <div class="col-md-3">
+                        <div class="card border-warning">
+                            <div class="card-body text-center">
+                                <h6 class="text-warning">Diárias PAV</h6>
+                                <h4 class="text-warning">R$ {{ saldos_para_distribuir.diarias_pav|currency }}</h4>
+                                <small class="text-muted">Disponível para distribuir</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if saldos_para_distribuir.derso_pav > 0 %}
+                    <div class="col-md-3">
+                        <div class="card border-danger">
+                            <div class="card-body text-center">
+                                <h6 class="text-danger">DERSO PAV</h6>
+                                <h4 class="text-danger">R$ {{ saldos_para_distribuir.derso_pav|currency }}</h4>
+                                <small class="text-muted">Disponível para distribuir</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mt-3 text-center">
+                    <a href="{{ url_for('orcamento') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-plus"></i> Cadastrar Novo Orçamento
+                    </a>
+                    <a href="{{ url_for('complementacao') }}" class="btn btn-outline-success">
+                        <i class="fas fa-plus-circle"></i> Adicionar Complementação
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+
+{% if dashboard_data.saldo_crpiv %}
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="alert alert-secondary text-center shadow-sm">
+        <h4 class="mb-2"><i class="fas fa-university"></i> Saldo disponível no CRPIV</h4>
+        <div class="row">
+          <div class="col">
+            <strong>Diárias:</strong>
+            R$ {{ dashboard_data.saldo_crpiv_detalhado.diarias|currency }}
+          </div>
+          <div class="col">
+            <strong>DERSO:</strong>
+            R$ {{ dashboard_data.saldo_crpiv_detalhado.derso|currency }}
+          </div>
+          <div class="col">
+            <strong>Diárias PAV:</strong>
+            R$ {{ dashboard_data.saldo_crpiv_detalhado.diarias_pav|currency }}
+          </div>
+          <div class="col">
+            <strong>DERSO PAV:</strong>
+            R$ {{ dashboard_data.saldo_crpiv_detalhado.derso_pav|currency }}
+          </div>
+        </div>
+        <hr>
+        <h5 class="mt-2 fw-bold text-dark">
+          Total: R$ {{ dashboard_data.saldo_crpiv|currency }}
+        </h5>
+        <small>Esse saldo pode ser usado em missões do CRPIV ou distribuído para subunidades.</small>
+      </div>
+    </div>
+  </div>
+{% endif %}
+
+<!-- Resumo por Tipo de Orçamento -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Orçamento Acumulado por Tipo</h5>
+                <a href="{{ url_for('saldos_bimestre') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-chart-pie"></i> Ver Saldos por Bimestre
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card border-primary">
+                            <div class="card-body text-center">
+                                <h6>Diárias</h6>
+                                <h4 class="text-primary">R$ {{ totais_geral.diarias|currency }}</h4>
+                                {% if saldos_para_distribuir.diarias > 0 %}
+                                <small class="text-info">R$ {{ saldos_para_distribuir.diarias|currency }} não distribuído</small>
+                                {% else %}
+                                <small class="text-success">✓ Totalmente distribuído</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-success">
+                            <div class="card-body text-center">
+                                <h6>DERSO</h6>
+                                <h4 class="text-success">R$ {{ totais_geral.derso|currency }}</h4>
+                                {% if saldos_para_distribuir.derso > 0 %}
+                                <small class="text-info">R$ {{ saldos_para_distribuir.derso|currency }} não distribuído</small>
+                                {% else %}
+                                <small class="text-success">✓ Totalmente distribuído</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-warning">
+                            <div class="card-body text-center">
+                                <h6>Diárias PAV</h6>
+                                <h4 class="text-warning">R$ {{ totais_geral.diarias_pav|currency }}</h4>
+                                {% if saldos_para_distribuir.diarias_pav > 0 %}
+                                <small class="text-info">R$ {{ saldos_para_distribuir.diarias_pav|currency }} não distribuído</small>
+                                {% else %}
+                                <small class="text-success">✓ Totalmente distribuído</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-danger">
+                            <div class="card-body text-center">
+                                <h6>DERSO PAV</h6>
+                                <h4 class="text-danger">R$ {{ totais_geral.derso_pav|currency }}</h4>
+                                {% if saldos_para_distribuir.derso_pav > 0 %}
+                                <small class="text-info">R$ {{ saldos_para_distribuir.derso_pav|currency }} não distribuído</small>
+                                {% else %}
+                                <small class="text-success">✓ Totalmente distribuído</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Saldos por Unidade -->
+{% if saldos_unidades %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Saldos Atuais por Unidade</h5>
+                <small class="text-muted">Diferença entre valores distribuídos e autorizados por tipo</small>
+            </div>
+            <div class="card-body">
+                <!-- Totais por unidade -->
+                <div class="row g-3 mb-4">
+                    {% for unidade, saldo in saldos_unidades.items() %}
+                    <div class="col-sm-6 col-md-4">
+                        <div class="card shadow-sm h-100 {{ 'border-success' if saldo > 0 else 'border-danger' if saldo < 0 else 'border-warning' }}">
+                            <div class="card-body text-center">
+                                <h6 class="text-truncate">{{ unidade }}</h6>
+                                <h4 class="fw-bold {{ 'text-success' if saldo > 0 else 'text-danger' if saldo < 0 else 'text-warning' }}">
+                                    R$ {{ saldo|currency }}
+                                </h4>
+                                <small class="text-muted">Saldo Total</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+
+                <!-- Detalhamento por tipo -->
+                {% if saldos_unidades_detalhados %}
+                <div class="row g-4">
+                    {% for unidade, tipos in saldos_unidades_detalhados.items() %}
+                    <div class="col-sm-6 col-md-4">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-header bg-light border-start border-4 border-primary">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-building me-1"></i> {{ unidade }}
+                                </h6>
+                            </div>
+                            <div class="card-body p-2">
+                                {% set tem_dados = false %}
+                                {% for tipo, dados in tipos.items() %}
+                                {% if dados.distribuido > 0 or dados.autorizado > 0 or dados.saldo != 0 %}
+                                {% set tem_dados = true %}
+                                <div class="d-flex justify-content-between align-items-center py-1 border-bottom small">
+                                    <span class="fw-bold text-truncate">{{ tipo }}</span>
+                                    <div class="text-end text-nowrap">
+                                        <span class="text-muted me-2">D: {{ dados.distribuido|currency }}</span>
+                                        <span class="text-muted me-2">A: {{ dados.autorizado|currency }}</span>
+                                        <span class="fw-bold {{ 'text-success' if dados.saldo > 0 else 'text-danger' if dados.saldo < 0 else 'text-warning' }}">
+                                            R$ {{ dados.saldo|currency }}
+                                        </span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+
+                                {% if not tem_dados %}
+                                <div class="text-center py-3">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle"></i> Nenhuma movimentação relevante
+                                    </small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Legenda -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="alert alert-info mb-0">
+                            <small>
+                                <strong>Legenda:</strong>
+                                <span class="badge bg-secondary me-2">D = Distribuído</span>
+                                <span class="badge bg-secondary me-2">A = Autorizado</span>
+                                <span class="badge bg-primary">Saldo = Disponível</span>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+
+
+<!-- Resumo dos Últimos Bimestres -->
+{% if saldos_bimestre %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Resumo por Bimestre (Últimos 3)</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Bimestre</th>
+                                <th>Disponibilizado</th>
+                                <th>Distribuído</th>
+                                <th>Autorizado</th>
+                                <th>Saldo</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in saldos_bimestre[:3] %}
+                            <tr>
+                                <td class="fw-bold">{{ item.orcamento.bimestre }}/{{ item.orcamento.ano }}</td>
+                                <td>R$ {{ item.total_disponibilizado|currency }}</td>
+                                <td>R$ {{ item.total_distribuido|currency }}</td>
+                                <td>R$ {{ item.total_autorizado|currency }}</td>
+                                <td class="{{ 'text-success' if item.saldo > 0 else 'text-danger' if item.saldo < 0 else 'text-warning' }}">
+                                    R$ {{ item.saldo|currency }}
+                                </td>
+                                <td>
+                                    {% if item.saldo > 0 %}
+                                        <span class="badge bg-success">Disponível</span>
+                                    {% elif item.saldo < 0 %}
+                                        <span class="badge bg-danger">Excedido</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Zerado</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Gráficos -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Status Orçamentário Geral</h5>
+                <button id="exportStatusChart" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-download"></i> PNG
+                </button>
+            </div>
+            <div class="card-body">
+                <canvas id="statusChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Distribuições por Unidade</h5>
+                <button id="exportDistribuicoesChart" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-download"></i> PNG
+                </button>
+            </div>
+            <div class="card-body">
+                <canvas id="distribuicoesChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="alert alert-warning">
+    <h4>Nenhum orçamento cadastrado</h4>
+    <p>Cadastre um orçamento para começar a utilizar o sistema.</p>
+    <a href="{{ url_for('orcamento') }}" class="btn btn-primary">Cadastrar Orçamento</a>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+{% if dashboard_data %}
+<script>
+// Gráfico de Status
+const ctx = document.getElementById('statusChart').getContext('2d');
+const statusChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Disponível', 'Previsões', 'Autorizadas'],
+        datasets: [{
+            data: [
+                {{ dashboard_data.disponivel }}, 
+                {{ dashboard_data.total_previsoes }}, 
+                {{ dashboard_data.total_autorizadas }}
+            ],
+            backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Status Orçamentário - Todos os Bimestres'
+            }
+        }
+    }
+});
+
+// Gráfico de Distribuições
+const distCtx = document.getElementById('distribuicoesChart').getContext('2d');
+const distribuicoesChart = new Chart(distCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ dashboard_data.distribuicoes_unidades.keys() | list | tojson }},
+        datasets: [{
+            label: 'Valor Distribuído (R$)',
+            data: {{ dashboard_data.distribuicoes_unidades.values() | list | tojson }},
+            backgroundColor: ['#007bff', '#28a745', '#ffc107']
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Valores Distribuídos por Unidade (Acumulado)'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return 'R$ ' + value.toLocaleString('pt-BR');
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Exportar gráficos
+document.getElementById('exportStatusChart').addEventListener('click', function() {
+    const link = document.createElement('a');
+    link.download = 'status_orcamento_geral.png';
+    link.href = statusChart.toBase64Image();
+    link.click();
+});
+
+document.getElementById('exportDistribuicoesChart').addEventListener('click', function() {
+    const link = document.createElement('a');
+    link.download = 'distribuicoes_unidades_geral.png';
+    link.href = distribuicoesChart.toBase64Image();
+    link.click();
+});
+</script>
+{% endif %}
+{% endblock %}

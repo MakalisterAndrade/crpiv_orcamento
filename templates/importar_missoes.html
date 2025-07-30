@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>Importar Missões via CSV</h2>
+        <p class="text-muted">Importe múltiplas missões de uma vez usando arquivo CSV</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5>Upload do Arquivo CSV</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="arquivo" class="form-label">Selecionar Arquivo CSV</label>
+                        <input type="file" class="form-control" id="arquivo" name="arquivo" accept=".csv" required>
+                        <div class="form-text">
+                            Arquivo deve estar em formato CSV com separador ';' ou ','
+                            <br>Tamanho máximo: 16MB
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('download_modelo_csv') }}" class="btn btn-outline-info">
+                            <i class="fas fa-download"></i> Baixar Modelo CSV
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload"></i> Importar Missões
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Instruções</h5>
+            </div>
+            <div class="card-body">
+                <h6>Formato do Arquivo:</h6>
+                <ul class="small">
+                    <li>Arquivo deve ser .csv</li>
+                    <li>Primeira linha deve conter os cabeçalhos</li>
+                    <li>Separador: ';' ou ','</li>
+                    <li>Codificação: UTF-8</li>
+                </ul>
+                
+                <h6 class="mt-3">Colunas Obrigatórias:</h6>
+                <ul class="small">
+                    <li><strong>fonte_dinheiro:</strong> {{ unidades|join(', ') }}</li>
+                    <li><strong>opm_destino:</strong> {{ unidades|join(', ') }}</li>
+                    <li><strong>processo_sei:</strong> Número do processo</li>
+                    <li><strong>descricao:</strong> Descrição da missão</li>
+                    <li><strong>periodo:</strong> Ex: 01/01/2024 a 05/01/2024</li>
+                    <li><strong>mes:</strong> {{ meses|join(', ') }}</li>
+                    <li><strong>tipo:</strong> {{ tipos|join(', ') }}</li>
+                    <li><strong>valor:</strong> Valor numérico (use . ou ,)</li>
+                </ul>
+                
+                <h6 class="mt-3">Colunas Opcionais:</h6>
+                <ul class="small">
+                    <li><strong>numero_autorizacao:</strong> Número da autorização</li>
+                    <li><strong>status:</strong> 'previsao' ou 'autorizada' (padrão: previsao)</li>
+                </ul>
+                
+                <div class="alert alert-info mt-3">
+                    <small>
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Dica:</strong> Baixe o modelo CSV para ver o formato correto!
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Exemplos de Dados -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Exemplo de Estrutura CSV</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>fonte_dinheiro</th>
+                                <th>opm_destino</th>
+                                <th>processo_sei</th>
+                                <th>descricao</th>
+                                <th>periodo</th>
+                                <th>mes</th>
+                                <th>tipo</th>
+                                <th>valor</th>
+                                <th>numero_autorizacao</th>
+                                <th>status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>CRPIV</td>
+                                <td>7º BPM</td>
+                                <td>23.000.001/2024-01</td>
+                                <td>Operação Patrulhamento</td>
+                                <td>01/01/2024 a 05/01/2024</td>
+                                <td>Janeiro</td>
+                                <td>DIÁRIAS</td>
+                                <td>1500.00</td>
+                                <td>AUT-001/2024</td>
+                                <td>previsao</td>
+                            </tr>
+                            <tr>
+                                <td>7º BPM</td>
+                                <td>8º BPM</td>
+                                <td>23.000.002/2024-01</td>
+                                <td>Apoio Operacional</td>
+                                <td>10/01/2024 a 15/01/2024</td>
+                                <td>Janeiro</td>
+                                <td>DERSO</td>
+                                <td>2000,50</td>
+                                <td></td>
+                                <td>autorizada</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <small class="text-muted">
+                    * Este é apenas um exemplo visual. Use o botão "Baixar Modelo CSV" para obter o arquivo real.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Validação do arquivo antes do upload
+document.getElementById('arquivo').addEventListener('change', function(e) {
+    const arquivo = e.target.files[0];
+    if (arquivo) {
+        const tamanho = arquivo.size / 1024 / 1024; // Converter para MB
+        
+        if (tamanho > 16) {
+            alert('Arquivo muito grande! Tamanho máximo: 16MB');
+            e.target.value = '';
+            return;
+        }
+        
+        if (!arquivo.name.toLowerCase().endsWith('.csv')) {
+            alert('Apenas arquivos CSV são permitidos!');
+            e.target.value = '';
+            return;
+        }
+        
+        // Mostrar informações do arquivo
+        const info = document.createElement('div');
+        info.className = 'alert alert-info mt-2';
+        info.innerHTML = `
+            <i class="fas fa-file-csv"></i>
+            <strong>Arquivo selecionado:</strong> ${arquivo.name} 
+            <span class="badge bg-secondary">${tamanho.toFixed(2)} MB</span>
+        `;
+        
+        // Remover info anterior se existir
+        const infoAnterior = document.querySelector('.alert-info');
+        if (infoAnterior && infoAnterior.innerHTML.includes('Arquivo selecionado')) {
+            infoAnterior.remove();
+        }
+        
+        e.target.parentNode.appendChild(info);
+    }
+});
+
+// Confirmação antes do upload
+document.querySelector('form').addEventListener('submit', function(e) {
+    const arquivo = document.getElementById('arquivo').files[0];
+    if (!arquivo) {
+        e.preventDefault();
+        alert('Selecione um arquivo CSV primeiro!');
+        return;
+    }
+    
+    if (!confirm('Deseja importar as missões do arquivo ' + arquivo.name + '?')) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}

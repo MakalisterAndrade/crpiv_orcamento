@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5>Nova Complementação Orçamentária</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Selecionar Orçamento</label>
+                                <select name="orcamento_id" class="form-select" required>
+                                    <option value="">Escolha um orçamento...</option>
+                                    {% for orc in orcamentos %}
+                                    <option value="{{ orc.id }}">
+                                        {{ orc.bimestre }}/{{ orc.ano }} - 
+                                        R$ {{ (orc.diarias + orc.derso + orc.diarias_pav + orc.derso_pav)|currency }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Tipo de Orçamento</label>
+                                <select name="tipo_orcamento" class="form-select" required>
+                                    {% for tipo in tipos %}
+                                    <option value="{{ tipo }}">{{ tipo }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Processo SEI</label>
+                                <input type="text" name="processo_sei" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Valor (R$)</label>
+                                <input type="number" step="0.01" name="valor" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descrição</label>
+                        <textarea name="descricao" class="form-control" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success">Cadastrar Complementação</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Complementações Cadastradas</h5>
+            </div>
+            <div class="card-body">
+                {% if complementacoes %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Bimestre</th>
+                                <th>Tipo</th>
+                                <th>Valor</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for comp in complementacoes %}
+                            <tr>
+                                <td>{{ comp.orcamento.bimestre }}/{{ comp.orcamento.ano }}</td>
+                                <td>{{ comp.tipo_orcamento }}</td>
+                                <td>R$ {{ comp.valor|currency }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('editar_complementacao', comp_id=comp.id) }}" 
+                                           class="btn btn-outline-primary btn-sm" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{{ url_for('remover_complementacao', comp_id=comp.id) }}" 
+                                           class="btn btn-outline-danger btn-sm"
+                                           title="Remover"
+                                           onclick="return confirm('Deseja realmente remover esta complementação?')">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p>Nenhuma complementação cadastrada.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

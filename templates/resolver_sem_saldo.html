@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>🚨 Saldo Insuficiente para Autorização</h2>
+        <p class="text-danger">A missão não pode ser autorizada devido à falta de saldo suficiente.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5>Detalhes da Missão</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Descrição:</strong> {{ missao.descricao }}</p>
+                <p><strong>Unidade:</strong> {{ missao.fonte_dinheiro }}</p>
+                <p><strong>Tipo:</strong> {{ missao.tipo }}</p>
+                <p><strong>Valor:</strong> R$ {{ missao.valor|currency }}</p>
+                <hr>
+                <p><strong>Saldo Disponível:</strong> <span class="text-danger">R$ {{ analise_saldo.saldo_disponivel|currency }}</span></p>
+                <p><strong>Déficit:</strong> <span class="text-danger fw-bold">R$ {{ analise_saldo.deficit|currency }}</span></p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card border-warning">
+            <div class="card-header bg-warning">
+                <h5>Opções de Resolução</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('resolver_sem_saldo', missao_id=missao.id) }}">
+                    
+                    {% if opcoes.opcoes_transferencia %}
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="tipo_resolucao" id="transferencia" value="transferencia">
+                        <label class="form-check-label" for="transferencia">
+                            <strong>Transferir de outra unidade</strong>
+                        </label>
+                    </div>
+                    
+                    <div id="opcoes-transferencia" class="ms-4 mb-3" style="display: none;">
+                        <select name="unidade_origem" class="form-select mb-2">
+                            <option value="">Selecione a unidade origem</option>
+                            {% for opcao in opcoes.opcoes_transferencia %}
+                            <option value="{{ opcao.unidade }}" data-valor="{{ opcao.valor_transferir }}">
+                                {{ opcao.unidade }} - Disponível: R$ {{ opcao.saldo_disponivel|currency }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <input type="hidden" name="valor_transferir" value="{{ analise_saldo.deficit }}">
+                        <small class="text-muted">Será transferido: R$ {{ analise_saldo.deficit|currency }}</small>
+                    </div>
+                    {% endif %}
+                    
+                    {% if opcoes.opcoes_crpiv.tem_saldo %}
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="tipo_resolucao" id="nova_distribuicao" value="nova_distribuicao">
+                        <label class="form-check-label" for="nova_distribuicao">
+                            <strong>Nova distribuição do CRPIV</strong>
+                        </label>
+                    </div>
+                    
+                    <div id="opcoes-crpiv" class="ms-4 mb-3" style="display: none;">
+                        <input type="hidden" name="valor_solicitar" value="{{ analise_saldo.deficit }}">
+                        <p class="text-success">
+                            CRPIV tem R$ {{ opcoes.opcoes_crpiv.saldo_disponivel|currency }} disponível.<br>
+                            Será distribuído: R$ {{ analise_saldo.deficit|currency }}
+                        </p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-grid gap-2 mt-3">
+                        <button type="submit" class="btn btn-primary" id="btn-resolver">
+                            Resolver e Autorizar Missão
+                        </button>
+                        <a href="{{ url_for('missoes') }}" class="btn btn-secondary">
+                            Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const radios = document.querySelectorAll('input[name="tipo_resolucao"]');
+    const btnResolver = document.getElementById('btn-resolver');
+    
+    radios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            // Ocultar todas as opções
+            const opcoesTransf = document.getElementById('opcoes-transferencia');
+            const opcoesCrpiv = document.getElementById('opcoes-crpiv');
+            
+            if (opcoesTransf) opcoesTransf.style.display = 'none';
+            if (opcoesCrpiv) opcoesCrpiv.style.display = 'none';
+            
+            // Mostrar opção selecionada
+            if (this.value === 'transferencia' && opcoesTransf) {
+                opcoesTransf.style.display = 'block';
+            } else if (this.value === 'nova_distribuicao' && opcoesCrpiv) {
+                opcoesCrpiv.style.display = 'block';
+            }
+            
+            btnResolver.disabled = false;
+        });
+    });
+    
+    btnResolver.disabled = true;
+});
+</script>
+{% endblock %}

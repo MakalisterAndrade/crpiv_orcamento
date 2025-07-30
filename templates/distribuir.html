@@ -1,0 +1,433 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>Distribuir Orçamento - {{ orcamento.bimestre }}/{{ orcamento.ano }}</h2>
+        <p class="text-muted">Preencha apenas os valores que deseja distribuir. Campos com valor zero não serão salvos.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Distribuição por Unidade</h5>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btnDistribuirRapido">
+                        Distribuição Rápida
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('salvar_distribuicao') }}" id="formDistribuicao">
+                    <input type="hidden" name="orcamento_id" value="{{ orcamento.id }}">
+                    
+                    <!-- Tabela de Distribuição -->
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="table-primary">
+                                <tr>
+                                    <th>Unidade</th>
+                                    <th>
+                                        Diárias
+                                        <br><small class="text-muted">Disponível: R$ {{ orcamento_totais.diarias|currency }}</small>
+                                    </th>
+                                    <th>
+                                        DERSO
+                                        <br><small class="text-muted">Disponível: R$ {{ orcamento_totais.derso|currency }}</small>
+                                    </th>
+                                    <th>
+                                        Diárias PAV
+                                        <br><small class="text-muted">Disponível: R$ {{ orcamento_totais.diarias_pav|currency }}</small>
+                                    </th>
+                                    <th>
+                                        DERSO PAV
+                                        <br><small class="text-muted">Disponível: R$ {{ orcamento_totais.derso_pav|currency }}</small>
+                                    </th>
+                                    <th>Total por Unidade</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for unidade in unidades %}
+                                <tr>
+                                    <td class="fw-bold">{{ unidade }}</td>
+                                    <td>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">R$</span>
+                                            <input type="number" 
+                                                   step="0.01" 
+                                                   name="{{ unidade }}_DIARIAS" 
+                                                   class="form-control valor-input"
+                                                   data-unidade="{{ unidade }}"
+                                                   data-tipo="DIARIAS"
+                                                   value="0"
+                                                   min="0"
+                                                   placeholder="0,00">
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">R$</span>
+                                            <input type="number" 
+                                                   step="0.01" 
+                                                   name="{{ unidade }}_DERSO" 
+                                                   class="form-control valor-input"
+                                                   data-unidade="{{ unidade }}"
+                                                   data-tipo="DERSO"
+                                                   value="0"
+                                                   min="0"
+                                                   placeholder="0,00">
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">R$</span>
+                                            <input type="number" 
+                                                   step="0.01" 
+                                                   name="{{ unidade }}_DIARIAS_PAV" 
+                                                   class="form-control valor-input"
+                                                   data-unidade="{{ unidade }}"
+                                                   data-tipo="DIARIAS_PAV"
+                                                   value="0"
+                                                   min="0"
+                                                   placeholder="0,00">
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">R$</span>
+                                            <input type="number" 
+                                                   step="0.01" 
+                                                   name="{{ unidade }}_DERSO_PAV" 
+                                                   class="form-control valor-input"
+                                                   data-unidade="{{ unidade }}"
+                                                   data-tipo="DERSO_PAV"
+                                                   value="0"
+                                                   min="0"
+                                                   placeholder="0,00">
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary total-unidade" 
+                                              data-unidade="{{ unidade }}" 
+                                              id="total-{{ unidade }}">R$ 0,00</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                
+                                <!-- Linha de Totais -->
+                                <tr class="table-warning fw-bold">
+                                    <td>TOTAL A DISTRIBUIR</td>
+                                    <td><span id="total-diarias">R$ 0,00</span></td>
+                                    <td><span id="total-derso">R$ 0,00</span></td>
+                                    <td><span id="total-diarias-pav">R$ 0,00</span></td>
+                                    <td><span id="total-derso-pav">R$ 0,00</span></td>
+                                    <td><span id="total-geral" class="badge bg-success fs-6">R$ 0,00</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Alertas de Resumo -->
+                    <div class="alert alert-info" id="resumoDistribuicao">
+                        <strong>Resumo:</strong> <span id="textoResumo">Nenhum valor inserido ainda</span>
+                    </div>
+                    
+                    <!-- Botões de Ação -->
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-outline-secondary" id="btnDistribuirIgual">
+                                Distribuir Tudo Igualmente
+                            </button>
+                            <button type="button" class="btn btn-outline-warning" id="btnLimparTudo">
+                                Limpar Campos
+                            </button>
+                        </div>
+                        <div>
+                            <button type="submit" class="btn btn-success btn-lg" id="btnSalvar">
+                                <i class="fas fa-save"></i> Salvar Distribuição
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Orçamento Disponível -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5>Orçamento Disponível</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Diárias:</span>
+                        <strong class="text-primary">R$ {{ orcamento_totais.diarias|currency }}</strong>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>DERSO:</span>
+                        <strong class="text-success">R$ {{ orcamento_totais.derso|currency }}</strong>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Diárias PAV:</span>
+                        <strong class="text-warning">R$ {{ orcamento_totais.diarias_pav|currency }}</strong>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>DERSO PAV:</span>
+                        <strong class="text-danger">R$ {{ orcamento_totais.derso_pav|currency }}</strong>
+                    </div>
+                </div>
+                <hr>
+                <div class="text-center">
+                    <h5>Total Geral</h5>
+                    <h4 class="text-primary">R$ {{ (orcamento_totais.diarias + orcamento_totais.derso + orcamento_totais.diarias_pav + orcamento_totais.derso_pav)|currency }}</h4>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dicas de Uso -->
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-lightbulb"></i> Dicas de Uso</h6>
+            </div>
+            <div class="card-body">
+                <ul class="small">
+                    <li><strong>Valores zero não são salvos:</strong> Deixe em branco ou zero os campos que não deseja distribuir</li>
+                    <li><strong>Distribuição parcial:</strong> Você pode distribuir apenas um tipo por vez</li>
+                    <li><strong>Distribuição rápida:</strong> Use o botão para distribuir tudo igualmente</li>
+                    <li><strong>Campos em destaque:</strong> Campos com valores > 0 ficam destacados</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Distribuições Existentes -->
+{% if distribuicoes %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Distribuições Existentes</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-sm">
+                        <thead>
+                            <tr>
+                                <th>Unidade</th>
+                                <th>Tipo</th>
+                                <th>Valor</th>
+                                <th>Data</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dist in distribuicoes %}
+                            <tr>
+                                <td>{{ dist.unidade }}</td>
+                                <td>{{ dist.tipo_orcamento }}</td>
+                                <td>R$ {{ dist.valor|currency }}</td>
+                                <td>{{ dist.data_distribuicao.strftime('%d/%m/%Y %H:%M') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Dados do orçamento
+const orcamentoDisponivel = {
+    diarias: {{ orcamento_totais.diarias }},
+    derso: {{ orcamento_totais.derso }},
+    diarias_pav: {{ orcamento_totais.diarias_pav }},
+    derso_pav: {{ orcamento_totais.derso_pav }}
+};
+
+// Função para formatar moeda
+function formatCurrency(value) {
+    return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+    }).format(value);
+}
+
+// Função para calcular totais
+function calcularTotais() {
+    const tipos = ['DIARIAS', 'DERSO', 'DIARIAS_PAV', 'DERSO_PAV'];
+    const unidades = {{ unidades | tojson }};
+    
+    let totaisTipo = {
+        'DIARIAS': 0,
+        'DERSO': 0,
+        'DIARIAS_PAV': 0,
+        'DERSO_PAV': 0
+    };
+    
+    let totalGeral = 0;
+    let camposPreenchidos = 0;
+    
+    // Calcular totais por unidade
+    unidades.forEach(unidade => {
+        let totalUnidade = 0;
+        tipos.forEach(tipo => {
+            const input = document.querySelector(`input[name="${unidade}_${tipo}"]`);
+            const valor = parseFloat(input.value) || 0;
+            
+            // Destacar campos com valor > 0
+            if (valor > 0) {
+                input.classList.add('border-success', 'border-2');
+                camposPreenchidos++;
+            } else {
+                input.classList.remove('border-success', 'border-2');
+            }
+            
+            totaisTipo[tipo] += valor;
+            totalUnidade += valor;
+        });
+        
+        // Atualizar total da unidade
+        document.getElementById(`total-${unidade}`).textContent = formatCurrency(totalUnidade);
+        totalGeral += totalUnidade;
+    });
+    
+    // Atualizar totais por tipo
+    document.getElementById('total-diarias').textContent = formatCurrency(totaisTipo.DIARIAS);
+    document.getElementById('total-derso').textContent = formatCurrency(totaisTipo.DERSO);
+    document.getElementById('total-diarias-pav').textContent = formatCurrency(totaisTipo.DIARIAS_PAV);
+    document.getElementById('total-derso-pav').textContent = formatCurrency(totaisTipo.DERSO_PAV);
+    document.getElementById('total-geral').textContent = formatCurrency(totalGeral);
+    
+    // Atualizar resumo
+    atualizarResumo(camposPreenchidos, totalGeral);
+    
+    // Atualizar botão de salvar
+    const btnSalvar = document.getElementById('btnSalvar');
+    if (camposPreenchidos > 0) {
+        btnSalvar.disabled = false;
+        btnSalvar.innerHTML = `<i class="fas fa-save"></i> Salvar ${camposPreenchidos} Distribuição(ões)`;
+        btnSalvar.classList.remove('btn-secondary');
+        btnSalvar.classList.add('btn-success');
+    } else {
+        btnSalvar.disabled = true;
+        btnSalvar.innerHTML = '<i class="fas fa-save"></i> Nenhum valor para salvar';
+        btnSalvar.classList.remove('btn-success');
+        btnSalvar.classList.add('btn-secondary');
+    }
+}
+
+// Função para atualizar resumo
+function atualizarResumo(camposPreenchidos, totalGeral) {
+    const resumoDiv = document.getElementById('resumoDistribuicao');
+    const textoResumo = document.getElementById('textoResumo');
+    
+    if (camposPreenchidos === 0) {
+        textoResumo.textContent = 'Nenhum valor inserido ainda';
+        resumoDiv.className = 'alert alert-info';
+    } else {
+        textoResumo.innerHTML = `<strong>${camposPreenchidos}</strong> campo(s) preenchido(s) - Total: <strong>${formatCurrency(totalGeral)}</strong>`;
+        resumoDiv.className = 'alert alert-success';
+    }
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Carregar distribuições existentes
+    {% if distribuicoes %}
+    {% for dist in distribuicoes %}
+    const input = document.querySelector(`input[name="{{ dist.unidade }}_{{ dist.tipo_orcamento.replace(' ', '_') }}"]`);
+    if (input) {
+        input.value = {{ dist.valor }};
+    }
+    {% endfor %}
+    {% endif %}
+    
+    // Calcular totais iniciais
+    calcularTotais();
+    
+    // Adicionar listeners aos inputs
+    document.querySelectorAll('.valor-input').forEach(input => {
+        input.addEventListener('input', calcularTotais);
+        
+        // Limpar campo quando focado se valor for 0
+        input.addEventListener('focus', function() {
+            if (this.value === '0' || this.value === '0.00') {
+                this.value = '';
+            }
+        });
+        
+        // Restaurar 0 se campo ficar vazio
+        input.addEventListener('blur', function() {
+            if (this.value === '') {
+                this.value = '0';
+                calcularTotais();
+            }
+        });
+    });
+    
+    // Botão distribuir igualmente
+    document.getElementById('btnDistribuirIgual').addEventListener('click', function() {
+        if (!confirm('Isso irá distribuir todo o orçamento igualmente entre as unidades. Continuar?')) {
+            return;
+        }
+        
+        const unidades = {{ unidades | tojson }};
+        const numUnidades = unidades.length;
+        
+        // Distribuir cada tipo igualmente
+        Object.keys(orcamentoDisponivel).forEach(tipoKey => {
+            const valorDisponivel = orcamentoDisponivel[tipoKey];
+            const valorPorUnidade = valorDisponivel / numUnidades;
+            const tipoNome = tipoKey.toUpperCase();
+            
+            unidades.forEach(unidade => {
+                const input = document.querySelector(`input[name="${unidade}_${tipoNome}"]`);
+                if (input) {
+                    input.value = valorPorUnidade.toFixed(2);
+                }
+            });
+        });
+        
+        calcularTotais();
+    });
+    
+    // Botão limpar tudo
+    document.getElementById('btnLimparTudo').addEventListener('click', function() {
+        if (confirm('Deseja limpar todos os valores?')) {
+            document.querySelectorAll('.valor-input').forEach(input => {
+                input.value = '0';
+            });
+            calcularTotais();
+        }
+    });
+});
+
+// Validação antes do envio
+document.getElementById('formDistribuicao').addEventListener('submit', function(e) {
+    const inputs = document.querySelectorAll('.valor-input');
+    let temValor = false;
+    
+    inputs.forEach(input => {
+        if (parseFloat(input.value) > 0) {
+            temValor = true;
+        }
+    });
+    
+    if (!temValor) {
+        e.preventDefault();
+        alert('Preencha ao menos um campo com valor maior que zero!');
+        return false;
+    }
+});
+</script>
+{% endblock %}

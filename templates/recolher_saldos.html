@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>Recolher Saldos - {{ orcamento.bimestre }}/{{ orcamento.ano }}</h2>
+        <p class="text-muted">
+            Recolha os valores não utilizados pelas subunidades de volta ao CRPIV
+        </p>
+    </div>
+</div>
+
+{% if saldos_detalhados %}
+<form method="POST" action="{{ url_for('confirmar_recolhimento_simples', orcamento_id=orcamento.id) }}">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Saldos Disponíveis para Recolhimento</h5>
+                </div>
+                <div class="card-body">
+                    {% set total_recolhivel = 0 %}
+                    
+                    {% for unidade, tipos in saldos_detalhados.items() %}
+                        {% if tipos %}
+                        <h6 class="text-primary">{{ unidade }}</h6>
+                        <div class="table-responsive mb-4">
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Recolher</th>
+                                        <th>Tipo</th>
+                                        <th>Distribuído</th>
+                                        <th>Autorizado</th>
+                                        <th>Saldo Disponível</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for tipo, dados in tipos.items() %}
+                                    {% if dados.saldo_disponivel > 0 %}
+                                    {% set total_recolhivel = total_recolhivel + dados.saldo_disponivel %}
+                                    <tr>
+                                        <td>
+                                            <div class="form-check">
+                                                <input class="form-check-input saldo-checkbox" 
+                                                       type="checkbox" 
+                                                       name="recolher_{{ unidade }}_{{ tipo }}"
+                                                       id="check_{{ unidade }}_{{ tipo }}"
+                                                       data-valor="{{ dados.saldo_disponivel }}"
+                                                       checked>
+                                                <label class="form-check-label" for="check_{{ unidade }}_{{ tipo }}">
+                                                    Recolher
+                                                </label>
+                                            </div>
+                                        </td>
+                                        <td>{{ tipo }}</td>
+                                        <td>R$ {{ dados.distribuido|currency }}</td>
+                                        <td>R$ {{ dados.autorizado|currency }}</td>
+                                        <td class="fw-bold text-success">R$ {{ dados.saldo_disponivel|currency }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Motivo do Recolhimento</label>
+                        <textarea name="motivo" class="form-control" rows="3" 
+                                  placeholder="Descreva o motivo do recolhimento...">Recolhimento de saldo não utilizado do {{ orcamento.bimestre }}/{{ orcamento.ano }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Resumo do Recolhimento</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <strong>Total Disponível:</strong><br>
+                        <span class="fs-4">R$ {{ total_recolhivel|currency }}</span>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <strong>Total Selecionado:</strong><br>
+                        <span class="fs-4" id="totalSelecionado">R$ {{ total_recolhivel|currency }}</span>
+                    </div>
+                    
+                    <h6>Destino dos Valores:</h6>
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <i class="fas fa-arrow-right fa-2x text-primary mb-2"></i>
+                            <h5 class="text-primary">CRPIV</h5>
+                            <p class="small text-muted">
+                                Os valores recolhidos retornam ao CRPIV
+                                mantendo a categoria original (DIÁRIAS, DERSO, etc.)
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-3">
+                        <button type="submit" class="btn btn-success btn-lg" id="btnRecolher">
+                            <i class="fas fa-money-bill-transfer"></i>
+                            Confirmar Recolhimento
+                        </button>
+                        <a href="{{ url_for('saldos_bimestre') }}" class="btn btn-secondary">
+                            Cancelar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+{% else %}
+<div class="alert alert-info">
+    <h4>Nenhum Saldo para Recolher</h4>
+    <p>Todos os valores distribuídos foram utilizados ou não há distribuições para este bimestre.</p>
+    <a href="{{ url_for('saldos_bimestre') }}" class="btn btn-primary">Voltar</a>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Atualizar total selecionado em tempo real
+function atualizarTotalSelecionado() {
+    let totalSelecionado = 0;
+    document.querySelectorAll('.saldo-checkbox:checked').forEach(checkbox => {
+        totalSelecionado += parseFloat(checkbox.getAttribute('data-valor'));
+    });
+    
+    document.getElementById('totalSelecionado').textContent = 
+        'R$ ' + totalSelecionado.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+    
+    // Habilitar/desabilitar botão
+    const btnRecolher = document.getElementById('btnRecolher');
+    if (totalSelecionado > 0) {
+        btnRecolher.disabled = false;
+        btnRecolher.innerHTML = '<i class="fas fa-money-bill-transfer"></i> Recolher R$ ' + 
+                               totalSelecionado.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+    } else {
+        btnRecolher.disabled = true;
+        btnRecolher.innerHTML = '<i class="fas fa-money-bill-transfer"></i> Selecione itens para recolher';
+    }
+}
+
+// Event listeners
+document.querySelectorAll('.saldo-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', atualizarTotalSelecionado);
+});
+
+// Inicializar
+document.addEventListener('DOMContentLoaded', function() {
+    atualizarTotalSelecionado();
+});
+
+// Confirmação antes do recolhimento
+document.querySelector('form').addEventListener('submit', function(e) {
+    const totalSelecionado = document.querySelectorAll('.saldo-checkbox:checked').length;
+    
+    if (totalSelecionado === 0) {
+        e.preventDefault();
+        alert('Selecione ao menos um item para recolher!');
+        return false;
+    }
+    
+    if (!confirm(`Confirma o recolhimento de ${totalSelecionado} item(s)?`)) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}

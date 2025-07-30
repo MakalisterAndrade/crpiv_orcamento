@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5>Novo Orçamento Bimestral</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Bimestre</label>
+                                <select name="bimestre" class="form-select" required>
+                                    {% for bimestre in bimestres %}
+                                    <option value="{{ bimestre }}">{{ bimestre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Ano</label>
+                                <input type="number" name="ano" class="form-control" value="2025" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- CAMPOS DE PERÍODO ADICIONADOS -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Data de Início do Bimestre</label>
+                                <input type="date" name="data_inicio" class="form-control" required>
+                                <div class="form-text">Ex: 14/05/2025 (início personalizado)</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Data de Fim do Bimestre</label>
+                                <input type="date" name="data_fim" class="form-control" required>
+                                <div class="form-text">Ex: 14/07/2025 (fim personalizado)</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Diárias (R$)</label>
+                                <input type="number" step="0.01" name="diarias" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">DERSO (R$)</label>
+                                <input type="number" step="0.01" name="derso" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Diárias PAV (R$)</label>
+                                <input type="number" step="0.01" name="diarias_pav" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">DERSO PAV (R$)</label>
+                                <input type="number" step="0.01" name="derso_pav" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Cadastrar Orçamento</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Orçamentos Cadastrados</h5>
+            </div>
+            <div class="card-body">
+                {% if orcamentos %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Período</th>
+                                <th>Vigência</th>
+                                <th>Total</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for orc in orcamentos %}
+                            <tr>
+                                <td>{{ orc.bimestre }}/{{ orc.ano }}</td>
+                                <td>
+                                    <small>
+                                        {% if orc.data_inicio and orc.data_fim %}
+                                            {{ orc.data_inicio.strftime('%d/%m') }} a 
+                                            {{ orc.data_fim.strftime('%d/%m/%Y') }}
+                                        {% else %}
+                                            Não definido
+                                        {% endif %}
+                                    </small>
+                                </td>
+                                <td>R$ {{ (orc.diarias + orc.derso + orc.diarias_pav + orc.derso_pav)|currency }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('distribuir', orcamento_id=orc.id) }}" 
+                                           class="btn btn-outline-primary btn-sm" title="Distribuir">
+                                            <i class="fas fa-share-alt"></i>
+                                        </a>
+                                        <a href="{{ url_for('editar_orcamento', orcamento_id=orc.id) }}" 
+                                           class="btn btn-outline-secondary btn-sm" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{{ url_for('remover_orcamento', orcamento_id=orc.id) }}" 
+                                           class="btn btn-outline-danger btn-sm"
+                                           title="Remover"
+                                           onclick="return confirm('Deseja realmente remover este orçamento? Esta ação também removerá todas as distribuições e complementações associadas!')">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p>Nenhum orçamento cadastrado.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Sugerir datas baseadas no bimestre selecionado
+document.querySelector('select[name="bimestre"]').addEventListener('change', function() {
+    const bimestre = this.value;
+    const ano = document.querySelector('input[name="ano"]').value;
+    const dataInicio = document.querySelector('input[name="data_inicio"]');
+    const dataFim = document.querySelector('input[name="data_fim"]');
+    
+    // Sugestões de datas baseadas no bimestre
+    const sugestoes = {
+        '1º Bimestre': { inicio: '01-01', fim: '02-28' },
+        '2º Bimestre': { inicio: '03-01', fim: '04-30' },
+        '3º Bimestre': { inicio: '05-01', fim: '06-30' },
+        '4º Bimestre': { inicio: '07-01', fim: '08-31' },
+        '5º Bimestre': { inicio: '09-01', fim: '10-31' },
+        '6º Bimestre': { inicio: '11-01', fim: '12-31' }
+    };
+    
+    if (sugestoes[bimestre]) {
+        dataInicio.value = `${ano}-${sugestoes[bimestre].inicio}`;
+        dataFim.value = `${ano}-${sugestoes[bimestre].fim}`;
+    }
+});
+
+// Validar datas
+document.querySelector('form').addEventListener('submit', function(e) {
+    const dataInicio = new Date(document.querySelector('input[name="data_inicio"]').value);
+    const dataFim = new Date(document.querySelector('input[name="data_fim"]').value);
+    
+    if (dataInicio >= dataFim) {
+        e.preventDefault();
+        alert('Data de início deve ser anterior à data de fim!');
+        return false;
+    }
+    
+    const diferenca = (dataFim - dataInicio) / (1000 * 60 * 60 * 24);
+    if (diferenca < 30) {
+        if (!confirm('Período menor que 30 dias. Continuar mesmo assim?')) {
+            e.preventDefault();
+            return false;
+        }
+    }
+});
+
+// Pré-carregar datas ao carregar a página
+document.addEventListener('DOMContentLoaded', function() {
+    const bimestreSelect = document.querySelector('select[name="bimestre"]');
+    if (bimestreSelect.value) {
+        bimestreSelect.dispatchEvent(new Event('change'));
+    }
+});
+</script>
+{% endblock %}

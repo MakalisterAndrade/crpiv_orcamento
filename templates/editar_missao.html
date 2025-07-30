@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5>Editar Missão</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Fonte do Dinheiro</label>
+                                <select name="fonte_dinheiro" class="form-select" required>
+                                    {% for unidade in unidades %}
+                                    <option value="{{ unidade }}" {{ 'selected' if missao.fonte_dinheiro == unidade }}>{{ unidade }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">OPM Destino</label>
+                                <select name="opm_destino" class="form-select" required>
+                                    {% for unidade in unidades %}
+                                    <option value="{{ unidade }}" {{ 'selected' if missao.opm_destino == unidade }}>{{ unidade }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Processo SEI</label>
+                                <input type="text" name="processo_sei" class="form-control" value="{{ missao.processo_sei }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Tipo</label>
+                                <select name="tipo" class="form-select" required>
+                                    {% for tipo in tipos %}
+                                    <option value="{{ tipo }}" {{ 'selected' if missao.tipo == tipo }}>{{ tipo }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descrição</label>
+                        <textarea name="descricao" class="form-control" rows="3" required>{{ missao.descricao }}</textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Período</label>
+                                <input type="text" name="periodo" class="form-control" value="{{ missao.periodo }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Mês</label>
+                                <select name="mes" class="form-select" required>
+                                    {% for mes in meses %}
+                                    <option value="{{ mes }}" {{ 'selected' if missao.mes == mes }}>{{ mes }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Valor (R$)</label>
+                                <input type="number" step="0.01" name="valor" class="form-control" value="{{ missao.valor }}" required>
+                                {% if missao.status == 'autorizada' %}
+                                <small class="text-warning">⚠️ Missão já autorizada - alteração será registrada no histórico</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Nº Autorização</label>
+                                <input type="text" name="numero_autorizacao" class="form-control" value="{{ missao.numero_autorizacao or '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Status</label>
+                                <input type="text" class="form-control" value="{{ missao.status.title() }}" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if missao.observacoes %}
+                    <div class="mb-3">
+                        <label class="form-label">Histórico de Alterações</label>
+                        <textarea class="form-control" rows="3" readonly>{{ missao.observacoes }}</textarea>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('missoes') }}" class="btn btn-secondary">Voltar</a>
+                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

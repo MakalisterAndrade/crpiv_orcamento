@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>Transferir Saldo Entre Unidades</h2>
+        <p class="text-muted">Transfira valores distribuídos de uma unidade para outra</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Nova Transferência</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="formTransferencia">
+                    <div class="mb-3">
+                        <label class="form-label">Unidade Origem</label>
+                        <select name="unidade_origem" id="unidade_origem" class="form-select" required>
+                            <option value="">Selecione a unidade origem</option>
+                            {% for unidade in unidades %}
+                            <option value="{{ unidade }}">{{ unidade }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Tipo de Orçamento</label>
+                        <select name="tipo_orcamento" id="tipo_orcamento" class="form-select" required>
+                            <option value="">Selecione o tipo</option>
+                            {% for tipo in tipos %}
+                            <option value="{{ tipo }}">{{ tipo }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Saldo Disponível</label>
+                        <input type="text" id="saldo_disponivel" class="form-control" readonly placeholder="Selecione origem e tipo">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Unidade Destino</label>
+                        <select name="unidade_destino" id="unidade_destino" class="form-select" required>
+                            <option value="">Selecione a unidade destino</option>
+                            {% for unidade in unidades %}
+                            <option value="{{ unidade }}">{{ unidade }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Valor a Transferir (R$)</label>
+                        <input type="number" step="0.01" name="valor" id="valor" class="form-control" required min="0.01">
+                        <small class="text-muted">Máximo: <span id="valor_maximo">R$ 0,00</span></small>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary" id="btnTransferir" disabled>
+                            <i class="fas fa-exchange-alt"></i> Executar Transferência
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Saldos Disponíveis por Unidade</h5>
+            </div>
+            <div class="card-body">
+                {% if saldos_disponiveis %}
+                    {% for unidade, tipos_saldo in saldos_disponiveis.items() %}
+                        {% if tipos_saldo %}
+                        <div class="mb-3">
+                            <h6 class="text-primary">{{ unidade }}</h6>
+                            {% for tipo, dados in tipos_saldo.items() %}
+                            <div class="d-flex justify-content-between align-items-center py-1">
+                                <small>{{ tipo }}:</small>
+                                <span class="badge bg-success">R$ {{ dados.disponivel|currency }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-info-circle fa-2x mb-2"></i>
+                    <br>Nenhum saldo disponível para transferência
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>Instruções</h6>
+            </div>
+            <div class="card-body">
+                <ul class="small">
+                    <li>Selecione a unidade origem que tem saldo disponível</li>
+                    <li>Escolha o tipo de orçamento a ser transferido</li>
+                    <li>Selecione a unidade destino</li>
+                    <li>Informe o valor (não pode exceder o saldo disponível)</li>
+                    <li>A transferência é irreversível</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Dados dos saldos disponíveis
+const saldosDisponiveis = {{ saldos_disponiveis | tojson }};
+
+document.addEventListener('DOMContentLoaded', function() {
+    const unidadeOrigem = document.getElementById('unidade_origem');
+    const tipoOrcamento = document.getElementById('tipo_orcamento');
+    const unidadeDestino = document.getElementById('unidade_destino');
+    const saldoDisponivel = document.getElementById('saldo_disponivel');
+    const valorMaximo = document.getElementById('valor_maximo');
+    const valor = document.getElementById('valor');
+    const btnTransferir = document.getElementById('btnTransferir');
+    
+    function atualizarSaldoDisponivel() {
+        const unidade = unidadeOrigem.value;
+        const tipo = tipoOrcamento.value;
+        
+        if (unidade && tipo && saldosDisponiveis[unidade] && saldosDisponiveis[unidade][tipo]) {
+            const saldo = saldosDisponiveis[unidade][tipo].disponivel;
+            saldoDisponivel.value = `R$ ${saldo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            valorMaximo.textContent = `R$ ${saldo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            valor.max = saldo;
+        } else {
+            saldoDisponivel.value = 'R$ 0,00';
+            valorMaximo.textContent = 'R$ 0,00';
+            valor.max = 0;
+        }
+        
+        verificarFormCompleto();
+    }
+    
+    function verificarFormCompleto() {
+        const origem = unidadeOrigem.value;
+        const destino = unidadeDestino.value;
+        const tipo = tipoOrcamento.value;
+        const valorInput = parseFloat(valor.value) || 0;
+        const saldoMax = parseFloat(valor.max) || 0;
+        
+        const formValido = origem && destino && tipo && valorInput > 0 && valorInput <= saldoMax && origem !== destino;
+        
+        btnTransferir.disabled = !formValido;
+        
+        // Atualizar classes de validação
+        if (origem === destino && origem && destino) {
+            unidadeDestino.classList.add('is-invalid');
+        } else {
+            unidadeDestino.classList.remove('is-invalid');
+        }
+        
+        if (valorInput > saldoMax && valorInput > 0) {
+            valor.classList.add('is-invalid');
+        } else {
+            valor.classList.remove('is-invalid');
+        }
+    }
+    
+    // Event listeners
+    unidadeOrigem.addEventListener('change', atualizarSaldoDisponivel);
+    tipoOrcamento.addEventListener('change', atualizarSaldoDisponivel);
+    unidadeDestino.addEventListener('change', verificarFormCompleto);
+    valor.addEventListener('input', verificarFormCompleto);
+    
+    // Validação antes do envio
+    document.getElementById('formTransferencia').addEventListener('submit', function(e) {
+        if (!confirm('Deseja realmente executar esta transferência? Esta ação não pode ser desfeita.')) {
+            e.preventDefault();
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>Histórico de Recolhimentos</h2>
+        <p class="text-muted">Registro de saldos recolhidos das subunidades</p>
+    </div>
+</div>
+
+{% if recolhimentos %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Bimestre</th>
+                        <th>Unidade Origem</th>
+                        <th>Tipo</th>
+                        <th>Valor Recolhido</th>
+                        <th>Motivo</th>
+                        <th>Responsável</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rec in recolhimentos %}
+                    <tr>
+                        <td>{{ rec.data_recolhimento.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td>{{ rec.orcamento.bimestre }}/{{ rec.orcamento.ano }}</td>
+                        <td>{{ rec.unidade_origem }}</td>
+                        <td>{{ rec.tipo_orcamento }}</td>
+                        <td class="fw-bold text-success">R$ {{ rec.valor_recolhido|currency }}</td>
+                        <td>{{ rec.motivo[:50] }}{% if rec.motivo|length > 50 %}...{% endif %}</td>
+                        <td>{{ rec.usuario_responsavel }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <h4>Nenhum recolhimento realizado</h4>
+    <p>Não há registros de recolhimentos de saldos.</p>
+</div>
+{% endif %}
+
+{% endblock %}

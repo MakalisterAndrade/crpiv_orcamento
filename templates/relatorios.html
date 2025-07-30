@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>Relatórios e Gráficos</h2>
+        <p class="text-muted">Dados consolidados de todos os bimestres</p>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Filtrar por Unidade</label>
+                        <select name="unidade_filtro" class="form-select">
+                            <option value="">Todas as Unidades</option>
+                            {% for unidade in unidades_filtro %}
+                            <option value="{{ unidade }}" {{ 'selected' if dados.unidade_filtro == unidade }}>{{ unidade }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-filter"></i> Filtrar
+                            </button>
+                            <a href="{{ url_for('relatorios') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Limpar
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Exportar Relatórios</label>
+                        <div class="btn-group" role="group">
+                            <a href="{{ url_for('exportar_pdf') }}?tipo=orcamento&unidade={{ dados.unidade_filtro }}" 
+                               class="btn btn-outline-danger">
+                                <i class="fas fa-file-pdf"></i> Relatório PDF
+                            </a>
+                            <a href="{{ url_for('relatorio_movimentacoes') }}" 
+                               class="btn btn-outline-info">
+                                <i class="fas fa-list"></i> Movimentações
+                            </a>
+                            <a href="{{ url_for('exportar_movimentacoes_pdf') }}" 
+                               class="btn btn-outline-success">
+                                <i class="fas fa-file-pdf"></i> Movimentações PDF
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if dados %}
+<div class="row">
+    <!-- Gráfico por Tipo de Orçamento -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Orçamento Total por Tipo</h5>
+                <button class="btn btn-outline-secondary btn-sm export-chart" data-chart="tiposChart">
+                    <i class="fas fa-download"></i> PNG
+                </button>
+            </div>
+            <div class="card-body">
+                <canvas id="tiposChart" width="400" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico por Unidade -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Gastos por Unidade {{ '- ' + dados.unidade_filtro if dados.unidade_filtro }}</h5>
+                <button class="btn btn-outline-secondary btn-sm export-chart" data-chart="unidadesChart">
+                    <i class="fas fa-download"></i> PNG
+                </button>
+            </div>
+            <div class="card-body">
+                <canvas id="unidadesChart" width="400" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico por Status -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Status das Missões</h5>
+                <button class="btn btn-outline-secondary btn-sm export-chart" data-chart="statusMissoesChart">
+                    <i class="fas fa-download"></i> PNG
+                </button>
+            </div>
+            <div class="card-body">
+                <canvas id="statusMissoesChart" width="400" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumo -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Resumo Financeiro {{ '- ' + dados.unidade_filtro if dados.unidade_filtro else '- Geral' }}</h5>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <tr>
+                        <td>Total Orçamento:</td>
+                        <td><strong>R$ {{ (dados.tipos_valores|sum)|currency }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Previsões:</td>
+                        <td class="text-warning">R$ {{ dados.status_valores[0]|currency }}</td>
+                    </tr>
+                    <tr>
+                        <td>Autorizadas:</td>
+                        <td class="text-success">R$ {{ dados.status_valores[1]|currency }}</td>
+                    </tr>
+                    <tr class="fw-bold border-top">
+                        <td>Disponível:</td>
+                        <td class="text-primary">R$ {{ (dados.tipos_valores|sum - dados.status_valores[1])|currency }}</td>
+                    </tr>
+                </table>
+                
+                <!-- Botão rápido para PDF desta unidade -->
+                {% if dados.unidade_filtro %}
+                <div class="d-grid">
+                    <a href="{{ url_for('exportar_pdf') }}?tipo=unidade&unidade={{ dados.unidade_filtro }}" 
+                       class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-file-pdf"></i> PDF desta Unidade
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="alert alert-warning">
+    <h4><i class="fas fa-exclamation-triangle"></i> Sem dados para gerar relatórios</h4>
+    <p>Cadastre orçamentos e missões para visualizar os gráficos.</p>
+    <a href="{{ url_for('orcamento') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Cadastrar Orçamento
+    </a>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+{% if dados %}
+<script>
+let charts = {};
+
+// Gráfico por Tipo de Orçamento
+const tiposCtx = document.getElementById('tiposChart').getContext('2d');
+charts.tiposChart = new Chart(tiposCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ dados.tipos_orcamento | tojson }},
+        datasets: [{
+            label: 'Valor (R$)',
+            data: {{ dados.tipos_valores | tojson }},
+            backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545']
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Orçamento Total por Tipo (Todos os Bimestres)'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return 'R$ ' + value.toLocaleString('pt-BR');
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Gráfico por Unidade
+const unidadesCtx = document.getElementById('unidadesChart').getContext('2d');
+charts.unidadesChart = new Chart(unidadesCtx, {
+    type: 'doughnut',
+    data: {
+        labels: {{ dados.unidades | tojson }},
+        datasets: [{
+            data: {{ dados.gastos_unidade | tojson }},
+            backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545']
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Gastos Autorizados por Unidade'
+            }
+        }
+    }
+});
+
+// Gráfico por Status das Missões
+const statusMissoesCtx = document.getElementById('statusMissoesChart').getContext('2d');
+charts.statusMissoesChart = new Chart(statusMissoesCtx, {
+    type: 'pie',
+    data: {
+        labels: {{ dados.status_labels | tojson }},
+        datasets: [{
+            data: {{ dados.status_valores | tojson }},
+            backgroundColor: ['#ffc107', '#28a745']
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Status das Missões'
+            }
+        }
+    }
+});
+
+// Função para exportar gráfico individual
+document.querySelectorAll('.export-chart').forEach(button => {
+    button.addEventListener('click', function() {
+        const chartId = this.getAttribute('data-chart');
+        const chart = charts[chartId];
+        const link = document.createElement('a');
+        link.download = chartId + '_' + new Date().toISOString().slice(0, 10) + '.png';
+        link.href = chart.toBase64Image();
+        link.click();
+    });
+});
+</script>
+{% endif %}
+{% endblock %}
