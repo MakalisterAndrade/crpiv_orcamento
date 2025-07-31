@@ -71,7 +71,7 @@ cd controle_orcamentario_crpiv
 
 python -m venv venv
 source venv/bin/activate      \# Linux/macOS
-venv\Scripts\activate.bat     \# Windows
+.\venv\Scripts\activate       \# Windows
 
 # Instalar dependências
 
@@ -150,7 +150,7 @@ Contribuições são bem-vindas! Para contribuir:
 
 Desenvolvedor principal: **Makalister Andrade da Silva**  
 Email: makalister.andrade@outlook.com.com  
-GitHub: [github.com/seunome](https://github.com/MakalisterAndrade)
+GitHub: [github.com/MakalisterAndrade](https://github.com/MakalisterAndrade)
 
 ## Licença
 
